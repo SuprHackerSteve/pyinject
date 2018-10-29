@@ -1,13 +1,9 @@
 import ctypes
 from ctypes import wintypes
 
-kernel32 = ctypes.windll.kernel32
+import purepywin32.common as common
 
-def pyGetLastError():
-    GetLastError = kernel32.GetLastError
-    GetLastError.argtypes = ()
-    GetLastError.restype = wintypes.DWORD
-    return GetLastError()
+kernel32 = ctypes.windll.kernel32
 
 
 def pyOpenProcess(access, pid, inherit_handles=False):
@@ -16,4 +12,23 @@ def pyOpenProcess(access, pid, inherit_handles=False):
                             wintypes.BOOL,
                             wintypes.DWORD)
     OpenProcess.restype = wintypes.HANDLE
-    return OpenProcess(access, pid, inherit_handles)
+    ret = OpenProcess(access, inherit_handles, pid)
+    if not ret:
+        raise ctypes.WinError()
+    return ret
+
+def pyCloseHandle(handle):
+    CloseHandle = kernel32.CloseHandle
+    CloseHandle.argtypes = (wintypes.HANDLE,)
+    CloseHandle.restype = wintypes.BOOL
+
+    if not handle:
+        return
+
+    CloseHandle(handle)
+
+def pyGetCurrentProcessId():
+    GetCurrentProcessId = kernel32.GetCurrentProcessId
+    GetCurrentProcessId.argtypes = ()
+    GetCurrentProcessId.restype = wintypes.DWORD
+    return GetCurrentProcessId()

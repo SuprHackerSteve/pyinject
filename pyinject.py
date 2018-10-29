@@ -2,7 +2,9 @@ import argparse
 import os
 import platform
 
-import purepywin32.kernel32 as pyk32
+import purepywin32.common as pycommon
+import purepywin32.kernel32 as k32
+import purepywin32.winutils as utils
 
 
 class PyInjectorInvalidDLL(Exception):
@@ -13,20 +15,25 @@ class PyDLLInjector(object):
         self.pid = pid
         self.process = process
         self.dllname = dllname
+        self.mypid = k32.pyGetCurrentProcessId()
 
         if not os.path.isfile(self.dllname):
             raise PyInjectorInvalidDLL('dll not found on disk')
 
     def get_proc_handle(self):
-        pass
+        proc_handle = k32.pyOpenProcess(pycommon.PROCESS_CREATE_THREAD | pycommon.PROCESS_VM_WRITE,
+                                          self.pid)
+        proc_list = utils.get_all_procs()
+        self.process = proc_list[self.pid]
+        print('* Injecting into %s (%d)' % (self.process, self.pid))
 
-    def check_perms(self):
-        pass
-
+    def inject(self):
+        self.get_proc_handle()
 
 def main(args):
     if args.pid and args.dll:
         pyinject = PyDLLInjector(args.dll, pid=args.pid)
+        pyinject.inject()
 
     if args.process and args.process:
         pyinject = PyDLLInjector(args.dll, process=args.process)
